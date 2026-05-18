@@ -30,9 +30,28 @@ jobs:
       - name: Install deps
         run: pnpm install
 
-      - name: Run affected tests
+      # 🧠 PR → AFFECTED ONLY
+      - name: Unit tests (affected)
+        if: github.event_name == 'pull_request'
         run: pnpm turbo run test --filter=...[origin/main]
 
-      - name: Run all tests on main
+      - name: Build (affected)
+        if: github.event_name == 'pull_request'
+        run: pnpm turbo run build --filter=...[origin/main]
+
+      - name: E2E tests (affected)
+        if: github.event_name == 'pull_request'
+        run: pnpm turbo run test:e2e --filter=...[origin/main]
+
+      # 🚀 MAIN → FULL RUN
+      - name: Unit tests (full)
         if: github.event_name == 'push'
         run: pnpm turbo run test
+
+      - name: Build (full)
+        if: github.event_name == 'push'
+        run: pnpm turbo run build
+
+      - name: E2E tests (full)
+        if: github.event_name == 'push'
+        run: pnpm turbo run test:e2e
