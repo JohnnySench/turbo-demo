@@ -34,7 +34,7 @@ jobs:
         run: pnpm exec playwright install --with-deps
 
       # -----------------------
-      # PR: AFFECTED PIPELINE
+      # PR PIPELINE (AFFECTED)
       # -----------------------
 
       - name: Unit tests (affected)
@@ -48,9 +48,9 @@ jobs:
       - name: Start apps (preview)
         if: github.event_name == 'pull_request'
         run: |
-          pnpm --filter base preview --port 4173 --strictPort &
-          pnpm --filter admin preview --port 4174 --strictPort &
-          pnpm --filter promotion preview --port 4175 --strictPort &
+          pnpm --filter base preview --port 4173 &
+          pnpm --filter admin preview --port 4174 &
+          pnpm --filter promotion preview --port 4175 &
 
       - name: Wait for apps
         if: github.event_name == 'pull_request'
@@ -58,10 +58,10 @@ jobs:
 
       - name: E2E tests (affected)
         if: github.event_name == 'pull_request'
-        run: pnpm turbo run test:e2e --filter=...[origin/main]
+        run: pnpm exec playwright test
 
       # -----------------------
-      # MAIN: FULL PIPELINE
+      # MAIN PIPELINE (FULL)
       # -----------------------
 
       - name: Unit tests (full)
@@ -75,9 +75,9 @@ jobs:
       - name: Start apps (full preview)
         if: github.event_name == 'push'
         run: |
-          pnpm --filter base preview --port 4173 --strictPort &
-          pnpm --filter admin preview --port 4174 --strictPort &
-          pnpm --filter promotion preview --port 4175 --strictPort &
+          pnpm --filter base preview --port 4173 &
+          pnpm --filter admin preview --port 4174 &
+          pnpm --filter promotion preview --port 4175 &
 
       - name: Wait for apps (full)
         if: github.event_name == 'push'
@@ -85,4 +85,4 @@ jobs:
 
       - name: E2E tests (full)
         if: github.event_name == 'push'
-        run: pnpm turbo run test:e2e
+        run: pnpm exec playwright test
