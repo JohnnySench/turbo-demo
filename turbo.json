@@ -12,7 +12,7 @@
       "cache": false
     },
     "test:e2e": {
-      "dependsOn": ["build"],
+      "dependsOn": ["^build", "^preview"],
       "cache": false
     }
   }
