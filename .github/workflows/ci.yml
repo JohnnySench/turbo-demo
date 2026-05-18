@@ -32,3 +32,7 @@ jobs:
 
       - name: Run affected tests
         run: pnpm turbo run test --filter=...[origin/main]
+
+      - name: Run all tests on main
+        if: github.event_name == 'push'
+        run: pnpm turbo run test
