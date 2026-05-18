@@ -36,8 +36,16 @@ jobs:
       # -----------------------
       # START ONLY AFFECTED PREVIEW
       # -----------------------
-      - name: Start affected apps
-        run: pnpm turbo run preview --filter=...[origin/main]
+      - name: Get affected apps
+        id: apps
+        run: |
+          echo "APPS=$(pnpm turbo run build --dry-run --filter=...[origin/main] --json | jq -r '.tasks[].package')" >> $GITHUB_OUTPUT
+
+      - name: Start apps (affected)
+        run: |
+          if [[ "${{ steps.apps.outputs.APPS }}" == *"base"* ]]; then pnpm --filter base preview --port 4173 & fi
+          if [[ "${{ steps.apps.outputs.APPS }}" == *"admin"* ]]; then pnpm --filter admin preview --port 4174 & fi
+          if [[ "${{ steps.apps.outputs.APPS }}" == *"promotion"* ]]; then pnpm --filter promotion preview --port 4175 & fi
 
       # -----------------------
       # E2E AFFECTED (Turbo decides)
