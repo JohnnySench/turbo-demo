@@ -33,7 +33,10 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps
 
-      # 🧠 PR → AFFECTED ONLY
+      # -----------------------
+      # PR: AFFECTED PIPELINE
+      # -----------------------
+
       - name: Unit tests (affected)
         if: github.event_name == 'pull_request'
         run: pnpm turbo run test --filter=...[origin/main]
@@ -42,11 +45,25 @@ jobs:
         if: github.event_name == 'pull_request'
         run: pnpm turbo run build --filter=...[origin/main]
 
+      - name: Start apps (preview)
+        if: github.event_name == 'pull_request'
+        run: |
+          pnpm --filter base preview --port 4173 --strictPort &
+          pnpm --filter admin preview --port 4174 --strictPort &
+          pnpm --filter promotion preview --port 4175 --strictPort &
+
+      - name: Wait for apps
+        if: github.event_name == 'pull_request'
+        run: pnpm exec wait-on http://localhost:4173 http://localhost:4174 http://localhost:4175
+
       - name: E2E tests (affected)
         if: github.event_name == 'pull_request'
         run: pnpm turbo run test:e2e --filter=...[origin/main]
 
-      # 🚀 MAIN → FULL RUN
+      # -----------------------
+      # MAIN: FULL PIPELINE
+      # -----------------------
+
       - name: Unit tests (full)
         if: github.event_name == 'push'
         run: pnpm turbo run test
@@ -54,6 +71,17 @@ jobs:
       - name: Build (full)
         if: github.event_name == 'push'
         run: pnpm turbo run build
+
+      - name: Start apps (full preview)
+        if: github.event_name == 'push'
+        run: |
+          pnpm --filter base preview --port 4173 --strictPort &
+          pnpm --filter admin preview --port 4174 --strictPort &
+          pnpm --filter promotion preview --port 4175 --strictPort &
+
+      - name: Wait for apps (full)
+        if: github.event_name == 'push'
+        run: pnpm exec wait-on http://localhost:4173 http://localhost:4174 http://localhost:4175
 
       - name: E2E tests (full)
         if: github.event_name == 'push'
