@@ -30,6 +30,9 @@ jobs:
       - name: Install deps
         run: pnpm install
 
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps
+
       # 🧠 PR → AFFECTED ONLY
       - name: Unit tests (affected)
         if: github.event_name == 'pull_request'
