@@ -7,19 +7,19 @@ export default defineConfig({
         {
             name: 'base',
             use: {
-                baseURL: 'http://localhost:4173'
+                baseURL: 'http://localhost:4173/'
             }
         },
         {
             name: 'admin',
             use: {
-                baseURL: 'http://localhost:4174'
+                baseURL: 'http://localhost:4174/admin'
             }
         },
         {
             name: 'promotion',
             use: {
-                baseURL: 'http://localhost:4175'
+                baseURL: 'http://localhost:4175/promotion'
             }
         }
     ],
