@@ -3,86 +3,50 @@ name: CI
 on:
   pull_request:
   push:
-    branches:
-      - main
+    branches: [main]
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4
         with:
           version: 8.15.6
 
-      - name: Setup node
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
 
-      - name: Install deps
-        run: pnpm install
+      - run: pnpm install
 
-      - name: Install Playwright browsers
-        run: pnpm exec playwright install --with-deps
+      - run: pnpm exec playwright install --with-deps
 
       # -----------------------
-      # PR PIPELINE (AFFECTED)
+      # BUILD AFFECTED
       # -----------------------
-
-      - name: Unit tests (affected)
-        if: github.event_name == 'pull_request'
-        run: pnpm turbo run test --filter=...[origin/main]
-
-      - name: Build (affected)
-        if: github.event_name == 'pull_request'
+      - name: Build affected apps
         run: pnpm turbo run build --filter=...[origin/main]
 
-      - name: Start apps (preview)
-        if: github.event_name == 'pull_request'
-        run: |
-          pnpm --filter base preview --port 4173 &
-          pnpm --filter admin preview --port 4174 &
-          pnpm --filter promotion preview --port 4175 &
+      # -----------------------
+      # START ONLY AFFECTED PREVIEW
+      # -----------------------
+      - name: Start base
+        run: pnpm --filter base preview --port 4173 &
 
-      - name: Wait for apps
-        if: github.event_name == 'pull_request'
-        run: pnpm exec wait-on http://localhost:4173 http://localhost:4174 http://localhost:4175
+      - name: Start admin
+        run: pnpm --filter admin preview --port 4174 &
 
-      - name: E2E tests (affected)
-        if: github.event_name == 'pull_request'
-        run: pnpm exec playwright test
+      - name: Start promotion
+        run: pnpm --filter promotion preview --port 4175 &
 
       # -----------------------
-      # MAIN PIPELINE (FULL)
+      # E2E AFFECTED (Turbo decides)
       # -----------------------
-
-      - name: Unit tests (full)
-        if: github.event_name == 'push'
-        run: pnpm turbo run test
-
-      - name: Build (full)
-        if: github.event_name == 'push'
-        run: pnpm turbo run build
-
-      - name: Start apps (full preview)
-        if: github.event_name == 'push'
-        run: |
-          pnpm --filter base preview --port 4173 &
-          pnpm --filter admin preview --port 4174 &
-          pnpm --filter promotion preview --port 4175 &
-
-      - name: Wait for apps (full)
-        if: github.event_name == 'push'
-        run: pnpm exec wait-on http://localhost:4173 http://localhost:4174 http://localhost:4175
-
-      - name: E2E tests (full)
-        if: github.event_name == 'push'
-        run: pnpm exec playwright test
+      - name: E2E affected
+        run: pnpm turbo run test:e2e --filter=...[origin/main]
