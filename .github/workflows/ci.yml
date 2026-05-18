@@ -36,14 +36,8 @@ jobs:
       # -----------------------
       # START ONLY AFFECTED PREVIEW
       # -----------------------
-      - name: Start base
-        run: pnpm --filter base preview --port 4173 &
-
-      - name: Start admin
-        run: pnpm --filter admin preview --port 4174 &
-
-      - name: Start promotion
-        run: pnpm --filter promotion preview --port 4175 &
+      - name: Start affected apps
+        run: pnpm turbo run preview --filter=...[origin/main]
 
       # -----------------------
       # E2E AFFECTED (Turbo decides)
