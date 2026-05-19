@@ -6,13 +6,13 @@
       "outputs": ["dist/**"]
     },
     "preview": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^preview", "build"]
     },
     "test": {
       "cache": false
     },
     "test:e2e": {
-      "dependsOn": ["^build", "^preview"],
+      "dependsOn": ["build", "preview"],
       "cache": false
     }
   }
