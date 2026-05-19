@@ -23,32 +23,82 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - run: pnpm install
-
-      - run: pnpm exec playwright install --with-deps
+      - name: Install deps
+        run: pnpm install --frozen-lockfile
 
       # -----------------------
-      # BUILD AFFECTED
+      # Playwright browsers
       # -----------------------
-      - name: Build affected apps
+      - name: Install Playwright
+        run: pnpm exec playwright install --with-deps
+
+      # -----------------------
+      # Build affected
+      # -----------------------
+      - name: Build affected
         run: pnpm turbo run build --filter=...[origin/main]
 
       # -----------------------
-      # START ONLY AFFECTED PREVIEW
+      # Resolve affected apps
       # -----------------------
       - name: Get affected apps
-        id: apps
+        id: affected
         run: |
-          echo "APPS=$(pnpm turbo run build --dry-run --filter=...[origin/main] --json | jq -r '.tasks[].package')" >> $GITHUB_OUTPUT
+          APPS=$(pnpm turbo run build \
+            --filter=...[origin/main] \
+            --dry-run=json \
+            | jq -r '.tasks[].package' \
+            | sort -u)
 
-      - name: Start apps (affected)
-        run: |
-          if [[ "${{ steps.apps.outputs.APPS }}" == *"base"* ]]; then pnpm --filter base preview --port 4173 & fi
-          if [[ "${{ steps.apps.outputs.APPS }}" == *"admin"* ]]; then pnpm --filter admin preview --port 4174 & fi
-          if [[ "${{ steps.apps.outputs.APPS }}" == *"promotion"* ]]; then pnpm --filter promotion preview --port 4175 & fi
+          echo "Affected apps:"
+          echo "$APPS"
+
+          {
+            echo 'apps<<EOF'
+            echo "$APPS"
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
 
       # -----------------------
-      # E2E AFFECTED (Turbo decides)
+      # Start previews
+      # -----------------------
+      - name: Start previews
+        run: |
+          APPS="${{ steps.affected.outputs.apps }}"
+
+          if echo "$APPS" | grep -qx "base"; then
+            pnpm --filter base preview --port 4173 &
+          fi
+
+          if echo "$APPS" | grep -qx "admin"; then
+            pnpm --filter admin preview --port 4174 &
+          fi
+
+          if echo "$APPS" | grep -qx "promotion"; then
+            pnpm --filter promotion preview --port 4175 &
+          fi
+
+      # -----------------------
+      # Wait for apps
+      # -----------------------
+      - name: Wait for previews
+        run: |
+          APPS="${{ steps.affected.outputs.apps }}"
+
+          if echo "$APPS" | grep -qx "base"; then
+            npx wait-on http://127.0.0.1:4173
+          fi
+
+          if echo "$APPS" | grep -qx "admin"; then
+            npx wait-on http://127.0.0.1:4174
+          fi
+
+          if echo "$APPS" | grep -qx "promotion"; then
+            npx wait-on http://127.0.0.1:4175
+          fi
+
+      # -----------------------
+      # E2E only affected
       # -----------------------
       - name: E2E affected
         run: pnpm turbo run test:e2e --filter=...[origin/main]
